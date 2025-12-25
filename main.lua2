@@ -1,0 +1,213 @@
+--==================================================
+-- VFly V6 PC ONLY - FULL PACK
+-- Fly / Altitude / Collision / ESP / Theme
+-- Close / Compact / Restore
+--==================================================
+
+-- ===== Services =====
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+
+local LP = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+-- ===== Settings Save =====
+getgenv().VFlySettings = getgenv().VFlySettings or {
+	fly=false, noclip=false, theme="Purple", esp=true
+}
+
+-- ===== GUI =====
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "VFlyV6_PC"
+
+local Frame = Instance.new("Frame", gui)
+Frame.Size = UDim2.new(0, 260, 0, 240)
+Frame.Position = UDim2.new(0.05,0,0.2,0)
+Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.Active = true
+Frame.Draggable = true
+
+-- ===== Window Buttons =====
+local closeBtn = Instance.new("TextButton", Frame)
+closeBtn.Size = UDim2.new(0,28,0,20)
+closeBtn.Position = UDim2.new(1,-28,0,0)
+closeBtn.Text="X"
+closeBtn.TextScaled=true
+closeBtn.BackgroundColor3=Color3.fromRGB(180,60,60)
+
+local miniBtn = Instance.new("TextButton", Frame)
+miniBtn.Size = UDim2.new(0,28,0,20)
+miniBtn.Position = UDim2.new(1,-56,0,0)
+miniBtn.Text="-"
+miniBtn.TextScaled=true
+miniBtn.BackgroundColor3=Color3.fromRGB(70,70,70)
+
+local restoreBtn = Instance.new("TextButton", Frame)
+restoreBtn.Size = miniBtn.Size
+restoreBtn.Position = miniBtn.Position
+restoreBtn.Text="+"
+restoreBtn.TextScaled=true
+restoreBtn.Visible=false
+restoreBtn.BackgroundColor3=Color3.fromRGB(70,70,70)
+restoreBtn.Parent=Frame
+
+closeBtn.MouseButton1Click:Connect(function()
+	gui:Destroy()
+end)
+
+-- ===== Title =====
+local title = Instance.new("TextLabel", Frame)
+title.Size = UDim2.new(1,-60,0,20)
+title.Text="VFly V6 PC"
+title.TextScaled=true
+title.TextColor3=Color3.new(1,1,1)
+title.BackgroundTransparency=1
+
+-- ===== Buttons =====
+local function mkBtn(txt,y)
+	local b=Instance.new("TextButton",Frame)
+	b.Size=UDim2.new(1,-20,0,26)
+	b.Position=UDim2.new(0,10,0,y)
+	b.Text=txt
+	b.TextScaled=true
+	b.BackgroundColor3=Color3.fromRGB(60,60,60)
+	return b
+end
+
+local flyBtn     = mkBtn("FLY : OFF",30)
+local noclipBtn  = mkBtn("NOCLIP : OFF",60)
+local espBtn     = mkBtn("ESP : ON",90)
+local themeBtn   = mkBtn("THEME",120)
+
+-- ===== Altitude =====
+local alt = Instance.new("TextLabel", Frame)
+alt.Size=UDim2.new(1,-20,0,24)
+alt.Position=UDim2.new(0,10,0,150)
+alt.TextScaled=true
+alt.TextColor3=Color3.new(1,1,1)
+alt.BackgroundColor3=Color3.fromRGB(20,20,20)
+
+-- ===== Theme =====
+local Themes={
+	Purple={Main=Color3.fromRGB(140,80,255),Btn=Color3.fromRGB(180,120,255)},
+	Red   ={Main=Color3.fromRGB(180,50,50), Btn=Color3.fromRGB(255,90,90)},
+	Blue  ={Main=Color3.fromRGB(60,120,255),Btn=Color3.fromRGB(120,170,255)}
+}
+local order={"Purple","Red","Blue"}
+local idx=table.find(order,getgenv().VFlySettings.theme) or 1
+
+local function applyTheme()
+	local t=Themes[order[idx]]
+	Frame.BackgroundColor3=t.Main
+	for _,v in pairs(Frame:GetChildren()) do
+		if v:IsA("TextButton") then v.BackgroundColor3=t.Btn end
+	end
+	getgenv().VFlySettings.theme=order[idx]
+end
+applyTheme()
+
+themeBtn.MouseButton1Click:Connect(function()
+	idx=idx%#order+1
+	applyTheme()
+end)
+
+-- ===== Compact =====
+local compact=false
+local savedSize=Frame.Size
+
+miniBtn.MouseButton1Click:Connect(function()
+	if compact then return end
+	compact=true
+	savedSize=Frame.Size
+	for _,v in pairs(Frame:GetChildren()) do
+		if v~=title and v~=closeBtn and v~=restoreBtn then
+			v.Visible=false
+		end
+	end
+	Frame.Size=UDim2.new(0,200,0,22)
+	miniBtn.Visible=false
+	restoreBtn.Visible=true
+end)
+
+restoreBtn.MouseButton1Click:Connect(function()
+	compact=false
+	for _,v in pairs(Frame:GetChildren()) do v.Visible=true end
+	Frame.Size=savedSize
+	restoreBtn.Visible=false
+	miniBtn.Visible=true
+end)
+
+-- ===== Fly =====
+local flying=false
+local speed=2
+local bv,bg
+
+flyBtn.MouseButton1Click:Connect(function()
+	flying=not flying
+	getgenv().VFlySettings.fly=flying
+	flyBtn.Text="FLY : "..(flying and "ON" or "OFF")
+	if not flying and bv then bv:Destroy() bg:Destroy() end
+end)
+
+RunService.RenderStepped:Connect(function()
+	local c=LP.Character
+	if not (flying and c and c:FindFirstChild("HumanoidRootPart")) then return end
+	if not bv then
+		bv=Instance.new("BodyVelocity",c.HumanoidRootPart)
+		bg=Instance.new("BodyGyro",c.HumanoidRootPart)
+	end
+	local d=Vector3.zero
+	if UIS:IsKeyDown(Enum.KeyCode.W) then d+=Camera.CFrame.LookVector end
+	if UIS:IsKeyDown(Enum.KeyCode.S) then d-=Camera.CFrame.LookVector end
+	if UIS:IsKeyDown(Enum.KeyCode.A) then d-=Camera.CFrame.RightVector end
+	if UIS:IsKeyDown(Enum.KeyCode.D) then d+=Camera.CFrame.RightVector end
+	if UIS:IsKeyDown(Enum.KeyCode.Space) then d+=Vector3.new(0,1,0) end
+	if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then d-=Vector3.new(0,1,0) end
+	bv.Velocity=d*speed*50
+	bg.CFrame=Camera.CFrame
+end)
+
+-- ===== Noclip =====
+local noclip=false
+noclipBtn.MouseButton1Click:Connect(function()
+	noclip=not noclip
+	getgenv().VFlySettings.noclip=noclip
+	noclipBtn.Text="NOCLIP : "..(noclip and "ON" or "OFF")
+end)
+
+RunService.Stepped:Connect(function()
+	if noclip and LP.Character then
+		for _,p in pairs(LP.Character:GetDescendants()) do
+			if p:IsA("BasePart") then p.CanCollide=false end
+		end
+	end
+end)
+
+-- ===== Altitude =====
+RunService.RenderStepped:Connect(function()
+	if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+		alt.Text="ALT : "..math.floor(LP.Character.HumanoidRootPart.Position.Y)
+	end
+end)
+
+-- ===== ESP (Box / Rainbow) =====
+local espOn=true
+espBtn.MouseButton1Click:Connect(function()
+	espOn=not espOn
+	espBtn.Text="ESP : "..(espOn and "ON" or "OFF")
+end)
+
+RunService.RenderStepped:Connect(function()
+	if not espOn then return end
+	for _,plr in pairs(Players:GetPlayers()) do
+		if plr~=LP and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			if not plr.Character:FindFirstChild("ESP") then
+				local h=Instance.new("Highlight",plr.Character)
+				h.Name="ESP"
+				h.FillTransparency=1
+			end
+			plr.Character.ESP.OutlineColor=Color3.fromHSV((tick()%5)/5,1,1)
+		end
+	end
+end)
